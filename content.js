@@ -15,6 +15,7 @@
   let debounceTimer = null;
   let previousFocus = null;
   let requestToken = 0;
+  let previousScrollLockStyles = null;
 
   // ── MESSAGE LISTENER ─────────────────────────────────────────────────────
   browser.runtime.onMessage.addListener((message) => {
@@ -55,6 +56,7 @@
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
+    lockPageScroll();
     overlay.classList.add("qc-visible");
     input.value = "";
     input.setAttribute("aria-expanded", "true");
@@ -74,6 +76,7 @@
   function close() {
     if (!overlay) return;
     overlay.classList.remove("qc-visible");
+    unlockPageScroll();
     input.blur();
     input.setAttribute("aria-expanded", "false");
     currentResults = [];
@@ -86,6 +89,36 @@
       previousFocus.focus();
       previousFocus = null;
     }
+  }
+
+  function lockPageScroll() {
+    if (previousScrollLockStyles) return;
+
+    previousScrollLockStyles = {
+      htmlOverflow: document.documentElement.style.overflow,
+      htmlOverscrollBehavior: document.documentElement.style.overscrollBehavior,
+      bodyOverflow: document.body.style.overflow,
+      bodyOverscrollBehavior: document.body.style.overscrollBehavior,
+    };
+
+    document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehavior = "none";
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+  }
+
+  function unlockPageScroll() {
+    if (!previousScrollLockStyles) return;
+
+    document.documentElement.style.overflow =
+      previousScrollLockStyles.htmlOverflow;
+    document.documentElement.style.overscrollBehavior =
+      previousScrollLockStyles.htmlOverscrollBehavior;
+    document.body.style.overflow = previousScrollLockStyles.bodyOverflow;
+    document.body.style.overscrollBehavior =
+      previousScrollLockStyles.bodyOverscrollBehavior;
+
+    previousScrollLockStyles = null;
   }
 
   // ── BUILD DOM ─────────────────────────────────────────────────────────────
