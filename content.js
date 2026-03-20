@@ -81,7 +81,7 @@
 
     const searchIcon = document.createElement("span");
     searchIcon.id = "qc-search-icon";
-    searchIcon.textContent = "⌘";
+    searchIcon.appendChild(createIconSvg("search"));
 
     input = document.createElement("input");
     input.id = "qc-input";
@@ -142,9 +142,29 @@
     const settingsChip = document.createElement("button");
     settingsChip.className = "qc-chip qc-chip-settings";
     settingsChip.type = "button";
-    settingsChip.textContent = "⚙";
     settingsChip.setAttribute("aria-label", "Open Quick Commands Settings");
     settingsChip.title = "Quick Commands Settings";
+
+    const settingsIcon = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "svg",
+    );
+    settingsIcon.setAttribute("viewBox", "0 0 24 24");
+    settingsIcon.setAttribute("aria-hidden", "true");
+    settingsIcon.classList.add("qc-settings-icon");
+
+    const settingsPath = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path",
+    );
+    settingsPath.setAttribute(
+      "d",
+      "M19.14 12.94a7.43 7.43 0 0 0 .05-.94 7.43 7.43 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.18 7.18 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.48a.5.5 0 0 0 .12.64l2.03 1.58a7.43 7.43 0 0 0-.05.94c0 .32.02.63.05.94L2.83 14.16a.5.5 0 0 0-.12.64l1.92 3.32c.13.22.39.31.6.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54c.04.24.25.42.49.42h3.8c.24 0 .45-.18.49-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96c.22.09.47 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5z",
+    );
+
+    settingsIcon.appendChild(settingsPath);
+    settingsChip.appendChild(settingsIcon);
+
     settingsChip.addEventListener("click", async () => {
       try {
         await browser.runtime.sendMessage({
@@ -378,21 +398,17 @@
     // Icon / Favicon
     const iconEl = document.createElement("span");
     iconEl.className = "qc-item-icon";
-    if (result.emoji) {
-      iconEl.textContent = result.emoji;
-      iconEl.classList.add("qc-item-emoji");
-    } else if (result.icon) {
+    if (result.icon) {
       const img = document.createElement("img");
       img.src = result.icon;
       img.width = 16;
       img.height = 16;
       img.onerror = () => {
-        iconEl.textContent = typeEmoji(result.type);
+        iconEl.replaceChildren(createIconSvg(iconNameForType(result.type)));
       };
       iconEl.appendChild(img);
     } else {
-      iconEl.textContent = typeEmoji(result.type);
-      iconEl.classList.add("qc-item-emoji");
+      iconEl.appendChild(createIconSvg(iconNameForType(result.type)));
     }
 
     const text = document.createElement("span");
@@ -430,16 +446,46 @@
     return li;
   }
 
-  function typeEmoji(type) {
+  function iconNameForType(type) {
     return (
       {
-        tab: "🗂️",
-        "closed-tab": "↩️",
-        bookmark: "⭐",
-        history: "🕘",
-        command: "⚡",
-      }[type] || "•"
+        tab: "tab",
+        "closed-tab": "closed-tab",
+        bookmark: "bookmark",
+        history: "history",
+        command: "command",
+      }[type] || "dot"
     );
+  }
+
+  function createIconSvg(iconName) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.classList.add("qc-icon-svg");
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", iconPath(iconName));
+    svg.appendChild(path);
+
+    return svg;
+  }
+
+  function iconPath(iconName) {
+    const paths = {
+      search:
+        "M10.5 3a7.5 7.5 0 0 1 5.96 12.06l4.24 4.24a1 1 0 1 1-1.41 1.41l-4.24-4.24A7.5 7.5 0 1 1 10.5 3zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z",
+      tab: "M4 5a2 2 0 0 1 2-2h4.7c.53 0 1.04.21 1.41.59l1.3 1.3c.19.19.44.3.71.3H18a2 2 0 0 1 2 2v1H4V5zm0 5h16v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9z",
+      "closed-tab":
+        "M12 4a8 8 0 1 1-7.75 10h2.06A6 6 0 1 0 12 6V3l4 3.5-4 3.5V8a4 4 0 1 0 3.87 5h2.03A6 6 0 1 1 12 8.09V4z",
+      bookmark: "M6 3a2 2 0 0 0-2 2v16l8-4 8 4V5a2 2 0 0 0-2-2H6z",
+      history:
+        "M12 4a8 8 0 1 1-7.75 10H2l3.25-3.25L8.5 14H6.31A6 6 0 1 0 12 6v2l4-3.5L12 1v3zm-1 4h2v5h4v2h-6V8z",
+      command: "M13 2 4 14h6l-1 8 9-12h-6l1-8z",
+      dot: "M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6z",
+    };
+
+    return paths[iconName] || paths.dot;
   }
 
   function badgeLabel(type) {

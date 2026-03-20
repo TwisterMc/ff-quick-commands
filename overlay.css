@@ -59,13 +59,16 @@
 }
 
 #qc-search-icon {
-  font-size: 18px;
-  opacity: 0.4;
+  opacity: 1;
   flex-shrink: 0;
-  color: #cdd6f4;
-  font-weight: 700;
-  line-height: 1;
+  color: #ffffff;
+  line-height: 0;
   user-select: none;
+}
+
+#qc-search-icon .qc-icon-svg {
+  width: 16px;
+  height: 16px;
 }
 
 #qc-input {
@@ -162,7 +165,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+}
+
+.qc-settings-icon {
+  width: 15px;
+  height: 15px;
+  display: block;
+  fill: currentColor;
 }
 
 /* ── RESULTS LIST ─────────────────────────────────────────────────────────── */
@@ -237,6 +246,13 @@
 
 .qc-item-emoji {
   font-size: 15px;
+}
+
+.qc-icon-svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: #ffffff;
 }
 
 .qc-item-icon img {
