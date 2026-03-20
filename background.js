@@ -11,6 +11,23 @@ browser.browserAction.onClicked.addListener(() => {
   toggleQuickCommands();
 });
 
+const DEFAULT_SEARCH_SETTINGS = {
+  searchTabs: true,
+  searchClosedTabs: true,
+  searchBookmarks: true,
+  searchCommands: true,
+  searchHistory: true,
+};
+
+async function getSearchSettings() {
+  try {
+    const stored = await browser.storage.local.get(DEFAULT_SEARCH_SETTINGS);
+    return { ...DEFAULT_SEARCH_SETTINGS, ...stored };
+  } catch (_) {
+    return { ...DEFAULT_SEARCH_SETTINGS };
+  }
+}
+
 function isRestrictedUrl(url) {
   return (
     !url ||
@@ -78,10 +95,11 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 async function fetchData(query, filter) {
   const results = [];
   const q = query.trim().toLowerCase();
+  const settings = await getSearchSettings();
 
   try {
     // ── TABS ──────────────────────────────────────────────────────────────
-    if (!filter || filter === "tab") {
+    if (settings.searchTabs && (!filter || filter === "tab")) {
       const tabs = await browser.tabs.query({ currentWindow: true });
       for (const tab of tabs) {
         const title = (tab.title || "").toLowerCase();
@@ -100,7 +118,7 @@ async function fetchData(query, filter) {
     }
 
     // ── RECENT / CLOSED TABS ──────────────────────────────────────────────
-    if (!filter || filter === "tab") {
+    if (settings.searchClosedTabs && (!filter || filter === "tab")) {
       try {
         const sessions = await browser.sessions.getRecentlyClosed({
           maxResults: 10,
@@ -124,7 +142,7 @@ async function fetchData(query, filter) {
     }
 
     // ── BOOKMARKS ─────────────────────────────────────────────────────────
-    if (!filter || filter === "bookmark") {
+    if (settings.searchBookmarks && (!filter || filter === "bookmark")) {
       if (q) {
         const bookmarks = await browser.bookmarks.search(q);
         for (const bm of bookmarks.slice(0, 15)) {
@@ -141,7 +159,7 @@ async function fetchData(query, filter) {
     }
 
     // ── HISTORY ───────────────────────────────────────────────────────────
-    if (!filter || filter === "history") {
+    if (settings.searchHistory && (!filter || filter === "history")) {
       if (q) {
         const history = await browser.history.search({
           text: q,
@@ -161,7 +179,7 @@ async function fetchData(query, filter) {
     }
 
     // ── COMMANDS ──────────────────────────────────────────────────────────
-    if (!filter || filter === "cmd") {
+    if (settings.searchCommands && (!filter || filter === "cmd")) {
       const commands = getBuiltinCommands();
       for (const cmd of commands) {
         const label = cmd.label.toLowerCase();
@@ -404,6 +422,12 @@ function getBuiltinCommands() {
       description: "Open Firefox Settings",
     },
     {
+      id: "open-quick-commands-settings",
+      label: "Quick Commands Settings",
+      emoji: "🛠️",
+      description: "Open Quick Commands preferences",
+    },
+    {
       id: "open-privacy",
       label: "Privacy Settings",
       emoji: "🔒",
@@ -608,6 +632,9 @@ async function executeCommand(commandId, payload, senderTab) {
       break;
     case "open-settings":
       browser.tabs.create({ url: "about:preferences" });
+      break;
+    case "open-quick-commands-settings":
+      await browser.runtime.openOptionsPage();
       break;
     case "open-privacy":
       browser.tabs.create({ url: "about:preferences#privacy" });

@@ -14,6 +14,18 @@ A Vivaldi-inspired Quick Commands palette for Firefox. Press **Shift+Cmd+K** (Ma
 | **History**     | Full-text search your browsing history                             |
 | **Commands**    | Browser commands for tabs, navigation, zoom, settings, and windows |
 
+### Settings
+
+Open extension preferences to choose which sources are searched:
+
+- Tabs
+- Recently Closed Tabs
+- Bookmarks
+- Commands
+- History
+
+In Firefox: `about:addons` -> **Quick Commands** -> **Preferences**
+
 ### Filter prefixes (type these to narrow results)
 
 | Prefix      | Alias      | Filters to         |
@@ -56,6 +68,7 @@ ff-quick-commands/
 ├── background.js     — Shortcut handler, data fetching, command execution
 ├── content.js        — Overlay UI injected into web pages
 ├── overlay.css       — Palette styles
+├── options.html/js   — User settings page (search source toggles)
 ├── popup.html/js     — Fallback for about: pages
 └── icons/            — Extension icons
 ```
@@ -63,7 +76,7 @@ ff-quick-commands/
 ## Packaging for AMO
 
 ```bash
-zip -r quick-commands.zip manifest.json background.js content.js overlay.css popup.html popup.js icons/
+zip -r quick-commands.zip manifest.json background.js content.js overlay.css popup.html popup.js options.html options.js icons/
 ```
 
 Then submit `quick-commands.zip` at https://addons.mozilla.org/developers/

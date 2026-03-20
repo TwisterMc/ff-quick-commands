@@ -125,7 +125,7 @@
       chip.dataset.filter = value;
       chip.addEventListener("click", () => {
         chips
-          .querySelectorAll(".qc-chip")
+          .querySelectorAll(".qc-chip[data-filter]")
           .forEach((c) => c.classList.remove("qc-chip-active"));
         chip.classList.add("qc-chip-active");
         const currentText = input.value.replace(
@@ -138,6 +138,25 @@
       });
       chips.appendChild(chip);
     });
+
+    const settingsChip = document.createElement("button");
+    settingsChip.className = "qc-chip qc-chip-settings";
+    settingsChip.type = "button";
+    settingsChip.textContent = "⚙";
+    settingsChip.setAttribute("aria-label", "Open Quick Commands Settings");
+    settingsChip.title = "Quick Commands Settings";
+    settingsChip.addEventListener("click", async () => {
+      try {
+        await browser.runtime.sendMessage({
+          type: "EXECUTE_COMMAND",
+          command: "open-quick-commands-settings",
+          payload: {},
+        });
+      } finally {
+        close();
+      }
+    });
+    chips.appendChild(settingsChip);
 
     // Results list
     list = document.createElement("ul");
@@ -157,7 +176,7 @@
 
       // Sync chip highlights based on typed prefix
       const val = input.value.toLowerCase();
-      chips.querySelectorAll(".qc-chip").forEach((c) => {
+      chips.querySelectorAll(".qc-chip[data-filter]").forEach((c) => {
         const f = c.dataset.filter.toLowerCase();
         c.classList.toggle(
           "qc-chip-active",
@@ -338,13 +357,15 @@
   }
 
   function groupLabelForType(type) {
-    return {
-      tab: "Tabs",
-      "closed-tab": "Recently Closed Tabs",
-      bookmark: "Bookmarks",
-      history: "History",
-      command: "Commands",
-    }[type] || "Other";
+    return (
+      {
+        tab: "Tabs",
+        "closed-tab": "Recently Closed Tabs",
+        bookmark: "Bookmarks",
+        history: "History",
+        command: "Commands",
+      }[type] || "Other"
+    );
   }
 
   function buildResultItem(result, query, index) {
