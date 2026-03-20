@@ -209,6 +209,9 @@ async function fetchData(query, filter) {
 
     results.sort((a, b) => {
       if (b._score !== a._score) return b._score - a._score;
+      const typePriorityDiff =
+        getTypeTieBreakPriority(a.type) - getTypeTieBreakPriority(b.type);
+      if (typePriorityDiff !== 0) return typePriorityDiff;
       return a._sortIndex - b._sortIndex;
     });
 
@@ -235,6 +238,18 @@ function getMatchScore(result, q) {
   if (title.includes(q)) return 600;
   if (subtitle.includes(q) || commandId.includes(q)) return 500;
   return 0;
+}
+
+function getTypeTieBreakPriority(type) {
+  return (
+    {
+      bookmark: 0,
+      tab: 1,
+      command: 2,
+      history: 3,
+      "closed-tab": 4,
+    }[type] ?? 5
+  );
 }
 
 function getBuiltinCommands() {
