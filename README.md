@@ -26,10 +26,6 @@ Open extension preferences to choose which sources are searched:
 
 In Firefox: `about:addons` -> **Quick Commands** -> **Preferences**
 
-### Favicon loading
-
-Quick Commands uses Firefox-provided tab favicons when available, and falls back to the Vemetric favicon API for bookmarks, history, and any tab entries that do not already include an icon.
-
 ### Keyboard shortcuts in the palette
 
 | Key           | Action                              |
@@ -45,3 +41,17 @@ Quick Commands uses Firefox-provided tab favicons when available, and falls back
 ## Installation (temporary / development)
 
 Coming soon to Mozilla Add-ons!
+
+## Notes About Favicons
+
+Quick Commands uses Firefox-provided tab favicons when available, and falls back to the Vemetric favicon API for bookmarks, history, and any tab entries that do not already include an icon.
+
+## Privacy
+
+This add-on reads your browser data, but it does not collect any information.
+
+## Donate
+
+If you find FF Quick Commands useful and would like to support its development, consider [making a donation](https://ko-fi.com/twistermc).
+
+Every bit helps and is greatly appreciated!
