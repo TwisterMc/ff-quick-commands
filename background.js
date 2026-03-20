@@ -3,12 +3,12 @@
 
 browser.commands.onCommand.addListener((command) => {
   if (command === "open-quick-commands") {
-    toggleQuickCommands();
+    openQuickCommands();
   }
 });
 
 browser.browserAction.onClicked.addListener(() => {
-  toggleQuickCommands();
+  openQuickCommands();
 });
 
 const DEFAULT_SEARCH_SETTINGS = {
@@ -49,7 +49,7 @@ async function ensureOverlayInjected(tabId) {
   await browser.tabs.executeScript(tabId, { file: "content.js" });
 }
 
-async function toggleQuickCommands() {
+async function openQuickCommands() {
   const [activeTab] = await browser.tabs.query({
     active: true,
     currentWindow: true,
@@ -66,7 +66,7 @@ async function toggleQuickCommands() {
   try {
     await ensureOverlayInjected(activeTab.id);
     await browser.tabs.sendMessage(activeTab.id, {
-      type: "TOGGLE_QUICK_COMMANDS",
+      type: "OPEN_QUICK_COMMANDS",
     });
   } catch (err) {
     console.error("Unable to open Quick Commands overlay:", err);

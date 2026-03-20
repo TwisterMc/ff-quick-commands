@@ -22,6 +22,14 @@
       return Promise.resolve({ ok: true });
     }
 
+    if (message.type === "OPEN_QUICK_COMMANDS") {
+      if (overlay && overlay.classList.contains("qc-visible")) {
+        focusSearchInput();
+      } else {
+        open();
+      }
+    }
+
     if (message.type === "TOGGLE_QUICK_COMMANDS") {
       if (overlay && overlay.classList.contains("qc-visible")) {
         close();
@@ -44,9 +52,17 @@
     overlay.classList.add("qc-visible");
     input.value = "";
     input.setAttribute("aria-expanded", "true");
-    input.focus();
+    focusSearchInput();
     selectedIndex = -1;
     fetchAndRender("");
+  }
+
+  function focusSearchInput() {
+    input.focus({ preventScroll: true });
+    input.select();
+    requestAnimationFrame(() => {
+      input.focus({ preventScroll: true });
+    });
   }
 
   function close() {
