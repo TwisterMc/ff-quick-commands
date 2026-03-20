@@ -28,13 +28,15 @@
   document.addEventListener(
     "keydown",
     (e) => {
+      if (e.repeat || e.defaultPrevented || e.altKey) return;
+
       const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
       const isShiftK =
         e.key === "k" && e.shiftKey && (isMac ? e.metaKey : e.ctrlKey);
 
       if (isShiftK) {
         e.preventDefault();
-        e.stopImmediatePropagation();
+        e.stopPropagation();
         if (overlay && overlay.classList.contains("qc-visible")) {
           close();
         } else {
@@ -134,7 +136,11 @@
     if (list) list.innerHTML = "";
 
     if (previousFocus) {
-      previousFocus.focus();
+      try {
+        previousFocus.focus({ preventScroll: true });
+      } catch (_) {
+        previousFocus.focus();
+      }
       previousFocus = null;
     }
 
@@ -328,6 +334,8 @@
     modal.appendChild(chips);
     modal.appendChild(list);
     modal.appendChild(footer);
+
+    modal.addEventListener("keydown", trapFocusInModal);
     overlay.appendChild(modal);
 
     ensureShadowStylesReady();
@@ -569,6 +577,7 @@
 
       const groupHeader = document.createElement("li");
       groupHeader.className = "qc-group-header";
+      groupHeader.setAttribute("role", "presentation");
       groupHeader.textContent = groupLabel;
       list.appendChild(groupHeader);
 
@@ -667,6 +676,50 @@
     li.addEventListener("click", () => activateResult(result));
 
     return li;
+  }
+
+  function trapFocusInModal(e) {
+    if (e.key !== "Tab") return;
+
+    const focusable = getFocusableElements(overlay);
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const current = shadowRoot?.activeElement || document.activeElement;
+
+    if (e.shiftKey && current === first) {
+      e.preventDefault();
+      last.focus({ preventScroll: true });
+      return;
+    }
+
+    if (!e.shiftKey && current === last) {
+      e.preventDefault();
+      first.focus({ preventScroll: true });
+    }
+  }
+
+  function getFocusableElements(root) {
+    if (!root) return [];
+
+    const selectors = [
+      "a[href]",
+      "button:not([disabled])",
+      "input:not([disabled])",
+      "select:not([disabled])",
+      "textarea:not([disabled])",
+      "[tabindex]:not([tabindex='-1'])",
+    ].join(",");
+
+    return Array.from(root.querySelectorAll(selectors)).filter((el) => {
+      const style = window.getComputedStyle(el);
+      return (
+        !el.hasAttribute("hidden") &&
+        style.display !== "none" &&
+        style.visibility !== "hidden"
+      );
+    });
   }
 
   function loadResultIcon(iconEl, result) {
@@ -854,7 +907,7 @@
       await browser.runtime.sendMessage({
         type: "EXECUTE_COMMAND",
         command: "__open-url__",
-        payload: { url: result.url },
+        payload: { url: result.url, sourceType: result.type },
       });
     } else if (result.type === "command") {
       await browser.runtime.sendMessage({

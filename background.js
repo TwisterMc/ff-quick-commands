@@ -109,6 +109,52 @@ function getResultIconCandidates(url, preferredIconUrl = null) {
   }
 }
 
+function normalizeAllowedNavigationUrl(rawUrl, options = {}) {
+  const { allowBookmarklet = false } = options;
+  const targetUrl = String(rawUrl || "").trim();
+  if (!targetUrl) return null;
+
+  try {
+    const parsed = new URL(targetUrl);
+    const protocol = parsed.protocol.toLowerCase();
+
+    const allowedProtocols = new Set([
+      "http:",
+      "https:",
+      "about:",
+      "moz-extension:",
+      "chrome:",
+      "resource:",
+      "view-source:",
+    ]);
+
+    if (allowBookmarklet) {
+      allowedProtocols.add("javascript:");
+    }
+
+    if (!allowedProtocols.has(protocol)) {
+      return null;
+    }
+
+    if (protocol === "view-source:") {
+      const nestedUrl = targetUrl.slice("view-source:".length);
+      const nestedParsed = new URL(nestedUrl);
+      const nestedProtocol = nestedParsed.protocol.toLowerCase();
+      if (
+        nestedProtocol !== "http:" &&
+        nestedProtocol !== "https:" &&
+        nestedProtocol !== "about:"
+      ) {
+        return null;
+      }
+    }
+
+    return targetUrl;
+  } catch (_) {
+    return null;
+  }
+}
+
 async function ensureOverlayInjected(tabId) {
   try {
     await browser.tabs.sendMessage(tabId, { type: "PING" });
@@ -314,7 +360,13 @@ async function fetchData(query, filter) {
       if (q) {
         const bookmarks = await browser.bookmarks.search(q);
         const bookmarkResults = bookmarks
-          .filter((bm) => Boolean(bm.url))
+          .filter((bm) =>
+            Boolean(
+              normalizeAllowedNavigationUrl(bm.url, {
+                allowBookmarklet: true,
+              }),
+            ),
+          )
           .map((bm) => ({
             type: "bookmark",
             title: bm.title || bm.url,
@@ -339,12 +391,15 @@ async function fetchData(query, filter) {
           startTime: 0,
         });
         for (const item of history) {
+          const safeUrl = normalizeAllowedNavigationUrl(item.url);
+          if (!safeUrl) continue;
+
           results.push({
             type: "history",
             title: item.title || item.url,
             subtitle: item.url,
-            url: item.url,
-            icon: getResultIconCandidates(item.url),
+            url: safeUrl,
+            icon: getResultIconCandidates(safeUrl),
           });
         }
       }
@@ -575,7 +630,31 @@ async function executeCommand(commandId, payload, senderTab) {
       break;
     case "__open-url__":
       if (payload?.url) {
-        const targetUrl = String(payload.url);
+        const allowBookmarklet = payload?.sourceType === "bookmark";
+        const targetUrl = normalizeAllowedNavigationUrl(payload.url, {
+          allowBookmarklet,
+        });
+        if (!targetUrl) {
+          return;
+        }
+
+        const isBookmarklet = /^javascript:/i.test(targetUrl);
+        if (isBookmarklet) {
+          if (!senderTab?.id) {
+            return;
+          }
+
+          const bookmarkletCode = targetUrl.replace(/^javascript:\s*/i, "");
+          if (!bookmarkletCode) {
+            return;
+          }
+
+          await browser.tabs.executeScript(senderTab.id, {
+            code: bookmarkletCode,
+          });
+          return;
+        }
+
         const isInternalUrl =
           /^(about:|moz-extension:|chrome:|resource:|view-source:)/i.test(
             targetUrl,
