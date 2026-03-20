@@ -1,0 +1,317 @@
+/* overlay.css — Quick Commands palette */
+
+#qc-overlay {
+  all: initial;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+#qc-overlay.qc-visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+#qc-modal {
+  all: initial;
+  width: 640px;
+  max-width: 92vw;
+  background: #1e1e2e;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.4),
+    0 20px 60px -10px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-8px) scale(0.98);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+#qc-overlay.qc-visible #qc-modal {
+  transform: translateY(0) scale(1);
+}
+
+/* ── HEADER ───────────────────────────────────────────────────────────────── */
+
+#qc-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+#qc-search-icon {
+  font-size: 18px;
+  opacity: 0.4;
+  flex-shrink: 0;
+  color: #cdd6f4;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+#qc-input {
+  all: initial;
+  flex: 1;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: #cdd6f4;
+  background: transparent;
+  border: none;
+  caret-color: #89b4fa;
+}
+
+#qc-input:focus-visible {
+  outline: 2px solid #89b4fa;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+#qc-input::placeholder {
+  color: rgba(205, 214, 244, 0.35);
+}
+
+#qc-hint {
+  font-size: 11px;
+  color: rgba(205, 214, 244, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+#qc-hint kbd {
+  all: initial;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(205, 214, 244, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* ── FILTER CHIPS ─────────────────────────────────────────────────────────── */
+
+#qc-chips {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+.qc-chip {
+  all: initial;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(205, 214, 244, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 3px 11px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+
+.qc-chip:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(205, 214, 244, 0.75);
+}
+
+.qc-chip:focus-visible {
+  outline: 2px solid #89b4fa;
+  outline-offset: 2px;
+}
+
+.qc-chip-active {
+  background: rgba(137, 180, 250, 0.18) !important;
+  color: #89b4fa !important;
+  border-color: rgba(137, 180, 250, 0.35) !important;
+}
+
+/* ── RESULTS LIST ─────────────────────────────────────────────────────────── */
+
+#qc-list {
+  all: initial;
+  display: block;
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+#qc-list::-webkit-scrollbar {
+  width: 5px;
+}
+#qc-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.qc-group-header {
+  all: initial;
+  display: block;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(205, 214, 244, 0.3);
+  padding: 10px 16px 4px;
+}
+
+.qc-item {
+  all: initial;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-radius: 7px;
+  margin: 1px 6px;
+  transition: background 0.08s;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+.qc-item.qc-selected,
+.qc-item:hover {
+  background: rgba(137, 180, 250, 0.12);
+}
+
+.qc-item:focus-visible {
+  outline: 2px solid #89b4fa;
+  outline-offset: 1px;
+}
+
+.qc-item-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.qc-item-emoji {
+  font-size: 15px;
+}
+
+.qc-item-icon img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  border-radius: 3px;
+}
+
+.qc-item-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.qc-item-title {
+  all: initial;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #cdd6f4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.qc-item-title mark {
+  all: initial;
+  background: rgba(250, 219, 109, 0.3);
+  color: #f9e2af;
+  border-radius: 2px;
+  font-weight: 700;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 13.5px;
+}
+
+.qc-item-subtitle {
+  all: initial;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 11.5px;
+  color: rgba(205, 214, 244, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.qc-item-badge {
+  all: initial;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(205, 214, 244, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+
+.qc-empty {
+  all: initial;
+  display: block;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: 13px;
+  color: rgba(205, 214, 244, 0.35);
+  text-align: center;
+  padding: 28px 16px;
+  font-style: italic;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #qc-overlay,
+  #qc-modal,
+  .qc-chip,
+  .qc-item {
+    transition: none !important;
+  }
+}
