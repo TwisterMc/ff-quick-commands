@@ -295,8 +295,10 @@
 
     // Group by type
     const groups = groupResults(results);
-    for (const [groupLabel, items] of Object.entries(groups)) {
-      if (!items.length) continue;
+    for (const [groupLabel, items] of groups) {
+      if (!items.length) {
+        continue;
+      }
 
       const groupHeader = document.createElement("li");
       groupHeader.className = "qc-group-header";
@@ -316,21 +318,33 @@
   }
 
   function groupResults(results) {
-    const groups = {
-      "Open Tabs": [],
-      "Closed Tabs": [],
-      Bookmarks: [],
-      History: [],
-      Commands: [],
-    };
+    const groups = new Map([
+      ["Bookmarks", []],
+      ["Tabs", []],
+      ["Commands", []],
+      ["History", []],
+      ["Recently Closed Tabs", []],
+    ]);
+
     for (const r of results) {
-      if (r.type === "tab") groups["Open Tabs"].push(r);
-      else if (r.type === "closed-tab") groups["Closed Tabs"].push(r);
-      else if (r.type === "bookmark") groups["Bookmarks"].push(r);
-      else if (r.type === "history") groups["History"].push(r);
-      else if (r.type === "command") groups["Commands"].push(r);
+      const label = groupLabelForType(r.type);
+      if (!groups.has(label)) {
+        groups.set(label, []);
+      }
+      groups.get(label).push(r);
     }
+
     return groups;
+  }
+
+  function groupLabelForType(type) {
+    return {
+      tab: "Tabs",
+      "closed-tab": "Recently Closed Tabs",
+      bookmark: "Bookmarks",
+      history: "History",
+      command: "Commands",
+    }[type] || "Other";
   }
 
   function buildResultItem(result, query, index) {

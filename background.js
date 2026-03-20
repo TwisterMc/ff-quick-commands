@@ -181,7 +181,40 @@ async function fetchData(query, filter) {
     console.error("Quick Commands fetch error:", err);
   }
 
+  if (q) {
+    results.forEach((result, idx) => {
+      result._sortIndex = idx;
+      result._score = getMatchScore(result, q);
+    });
+
+    results.sort((a, b) => {
+      if (b._score !== a._score) return b._score - a._score;
+      return a._sortIndex - b._sortIndex;
+    });
+
+    results.forEach((result) => {
+      delete result._score;
+      delete result._sortIndex;
+    });
+  }
+
   return results;
+}
+
+function getMatchScore(result, q) {
+  const title = String(result.title || "").toLowerCase();
+  const subtitle = String(result.subtitle || "").toLowerCase();
+  const commandId = String(result.commandId || "").toLowerCase();
+
+  if (!q) return 0;
+
+  if (title === q || subtitle === q || commandId === q) return 1000;
+  if (title.startsWith(q)) return 900;
+  if (subtitle.startsWith(q) || commandId.startsWith(q)) return 800;
+  if (title.split(/\s+/).includes(q)) return 700;
+  if (title.includes(q)) return 600;
+  if (subtitle.includes(q) || commandId.includes(q)) return 500;
+  return 0;
 }
 
 function getBuiltinCommands() {
