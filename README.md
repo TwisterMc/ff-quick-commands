@@ -2,6 +2,8 @@
 
 A Vivaldi-inspired Quick Commands palette for Firefox. Press **Shift+Cmd+K** (Mac) or **Shift+Ctrl+K** (Windows/Linux) to open it from any page.
 
+![Screenshot of FF Quick Commands](screenshot.webp "FF Quick Commands in action")
+
 ---
 
 ## Features
@@ -38,7 +40,7 @@ In Firefox: `about:addons` -> **Quick Commands** -> **Preferences**
 
 ---
 
-## Installation (temporary / development)
+## Installation
 
 Coming soon to Mozilla Add-ons!
 
