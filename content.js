@@ -143,7 +143,7 @@
     input = document.createElement("input");
     input.id = "qc-input";
     input.type = "text";
-    input.placeholder = "Search tabs, bookmarks, history, commands…";
+    input.placeholder = "Search tabs, bookmarks, history, commands...";
     input.setAttribute("autocomplete", "off");
     input.setAttribute("spellcheck", "false");
     input.setAttribute("role", "combobox");
@@ -153,17 +153,16 @@
 
     const hint = document.createElement("span");
     hint.id = "qc-hint";
-    hint.appendChild(buildKbd("↑"));
-    hint.appendChild(buildKbd("↓"));
+    hint.appendChild(buildKbdIcon("arrow-up"));
+    hint.appendChild(buildKbdIcon("arrow-down"));
     hint.appendChild(document.createTextNode(" navigate  "));
-    hint.appendChild(buildKbd("↵"));
+    hint.appendChild(buildKbdIcon("enter"));
     hint.appendChild(document.createTextNode(" select  "));
     hint.appendChild(buildKbd("esc"));
     hint.appendChild(document.createTextNode(" close"));
 
     header.appendChild(searchIcon);
     header.appendChild(input);
-    header.appendChild(hint);
 
     // Filter chips
     const chips = document.createElement("div");
@@ -240,9 +239,20 @@
     list.id = "qc-list";
     list.setAttribute("role", "listbox");
 
+    const footer = document.createElement("div");
+    footer.id = "qc-footer";
+
+    const footerLabel = document.createElement("span");
+    footerLabel.id = "qc-footer-label";
+    footerLabel.textContent = "Keyboard Commands";
+
+    footer.appendChild(footerLabel);
+    footer.appendChild(hint);
+
     modal.appendChild(header);
     modal.appendChild(chips);
     modal.appendChild(list);
+    modal.appendChild(footer);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
 
@@ -279,6 +289,12 @@
   function buildKbd(label) {
     const kbd = document.createElement("kbd");
     kbd.textContent = label;
+    return kbd;
+  }
+
+  function buildKbdIcon(iconName) {
+    const kbd = document.createElement("kbd");
+    kbd.appendChild(createKbdIconSvg(iconName));
     return kbd;
   }
 
@@ -385,7 +401,7 @@
       empty.className = "qc-empty";
       empty.textContent = query
         ? "No results found"
-        : "Start typing to search…";
+        : "Start typing to search...";
       list.appendChild(empty);
       return;
     }
@@ -531,6 +547,67 @@
     return svg;
   }
 
+  function createKbdIconSvg(iconName) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 16 16");
+    svg.setAttribute("aria-hidden", "true");
+    svg.classList.add("qc-kbd-icon");
+
+    if (iconName === "arrow-up" || iconName === "arrow-down") {
+      const line = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "line",
+      );
+      line.setAttribute("x1", "8");
+      line.setAttribute("x2", "8");
+      line.setAttribute("y1", iconName === "arrow-up" ? "11.5" : "4.5");
+      line.setAttribute("y2", iconName === "arrow-up" ? "4.5" : "11.5");
+      svg.appendChild(line);
+
+      const chevron = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "polyline",
+      );
+      chevron.setAttribute(
+        "points",
+        iconName === "arrow-up"
+          ? "4.5,7.5 8,4 11.5,7.5"
+          : "4.5,8.5 8,12 11.5,8.5",
+      );
+      svg.appendChild(chevron);
+      return svg;
+    }
+
+    const vertical = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "line",
+    );
+    vertical.setAttribute("x1", "11.5");
+    vertical.setAttribute("x2", "11.5");
+    vertical.setAttribute("y1", "3.5");
+    vertical.setAttribute("y2", "8.5");
+    svg.appendChild(vertical);
+
+    const horizontal = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "line",
+    );
+    horizontal.setAttribute("x1", "11.5");
+    horizontal.setAttribute("x2", "4.5");
+    horizontal.setAttribute("y1", "8.5");
+    horizontal.setAttribute("y2", "8.5");
+    svg.appendChild(horizontal);
+
+    const arrow = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "polyline",
+    );
+    arrow.setAttribute("points", "7.5,5.5 4.5,8.5 7.5,11.5");
+    svg.appendChild(arrow);
+
+    return svg;
+  }
+
   function iconPath(iconName) {
     const paths = {
       search:
@@ -579,7 +656,7 @@
   }
 
   function truncate(str, max) {
-    return str.length > max ? "…" + str.slice(str.length - max + 1) : str;
+    return str.length > max ? "..." + str.slice(str.length - max + 3) : str;
   }
 
   // ── ACTIVATE RESULT ───────────────────────────────────────────────────────
