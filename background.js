@@ -32,7 +32,6 @@ function isRestrictedUrl(url) {
   return (
     !url ||
     url.startsWith("about:") ||
-    url.startsWith("moz-extension:") ||
     url.startsWith("chrome:") ||
     url.startsWith("resource:")
   );
@@ -194,7 +193,6 @@ async function fetchData(query, filter) {
             title: cmd.label,
             subtitle: cmd.description || "",
             icon: null,
-            emoji: cmd.emoji,
           });
         }
       }
@@ -245,233 +243,135 @@ function getBuiltinCommands() {
     {
       id: "new-tab",
       label: "New Tab",
-      emoji: "➕",
       description: "Open a new tab",
     },
     {
       id: "close-tab",
       label: "Close Tab",
-      emoji: "✖️",
       description: "Close the current tab",
     },
     {
       id: "reopen-tab",
       label: "Reopen Closed Tab",
-      emoji: "↩️",
       description: "Restore the last closed tab",
     },
     {
       id: "duplicate-tab",
       label: "Duplicate Tab",
-      emoji: "📋",
       description: "Duplicate the current tab",
     },
     {
       id: "pin-tab",
       label: "Pin / Unpin Tab",
-      emoji: "📌",
       description: "Toggle pin on current tab",
     },
     {
       id: "mute-tab",
       label: "Mute / Unmute Tab",
-      emoji: "🔇",
       description: "Toggle mute on current tab",
     },
     {
       id: "next-tab",
       label: "Next Tab",
-      emoji: "▶️",
       description: "Switch to the next tab",
     },
     {
       id: "prev-tab",
       label: "Prev Tab",
-      emoji: "◀️",
       description: "Switch to the previous tab",
     },
     // Navigation
     {
       id: "go-back",
       label: "Go Back",
-      emoji: "⬅️",
       description: "Navigate back",
     },
     {
       id: "go-forward",
       label: "Go Forward",
-      emoji: "➡️",
       description: "Navigate forward",
     },
     {
       id: "reload",
       label: "Reload Page",
-      emoji: "🔄",
       description: "Reload the current page",
     },
     {
       id: "hard-reload",
       label: "Hard Reload",
-      emoji: "🔃",
       description: "Bypass cache and reload",
     },
     {
       id: "stop",
       label: "Stop Loading",
-      emoji: "⏹️",
       description: "Stop the current page load",
     },
     {
       id: "scroll-top",
       label: "Scroll to Top",
-      emoji: "⬆️",
       description: "Jump to top of page",
     },
     {
       id: "scroll-bottom",
       label: "Scroll to Bottom",
-      emoji: "⬇️",
       description: "Jump to bottom of page",
     },
     // Page
     {
       id: "zoom-in",
       label: "Zoom In",
-      emoji: "🔍",
       description: "Increase page zoom",
     },
     {
       id: "zoom-out",
       label: "Zoom Out",
-      emoji: "🔎",
       description: "Decrease page zoom",
     },
     {
       id: "zoom-reset",
       label: "Reset Zoom",
-      emoji: "↔️",
       description: "Reset page zoom to 100%",
     },
     {
       id: "fullscreen",
       label: "Toggle Fullscreen",
-      emoji: "⛶",
       description: "Enter or exit fullscreen",
     },
     {
       id: "reader-mode",
       label: "Toggle Reader Mode",
-      emoji: "📖",
       description: "Enter reader view",
     },
     {
       id: "print-page",
       label: "Print Page",
-      emoji: "🖨️",
       description: "Print the current page",
     },
     {
       id: "view-source",
       label: "View Page Source",
-      emoji: "📄",
       description: "View source code",
     },
     // Tools & UI
     {
-      id: "open-downloads",
-      label: "Downloads",
-      emoji: "📥",
-      description: "Open Downloads panel",
-    },
-    {
-      id: "open-history",
-      label: "History",
-      emoji: "🕘",
-      description: "Open History panel",
-    },
-    {
-      id: "open-bookmarks",
-      label: "Bookmarks Manager",
-      emoji: "⭐",
-      description: "Open Bookmarks library",
-    },
-    {
-      id: "open-extensions",
-      label: "Extensions",
-      emoji: "🧩",
-      description: "Manage extensions",
-    },
-    {
-      id: "open-themes",
-      label: "Themes",
-      emoji: "🎨",
-      description: "Browse Firefox themes",
-    },
-    {
-      id: "open-addons",
-      label: "Add-ons Manager",
-      emoji: "🔧",
-      description: "Open Add-ons Manager",
-    },
-    {
-      id: "open-console",
-      label: "Browser Console",
-      emoji: "💻",
-      description: "Open Browser Console",
-    },
-    {
-      id: "open-settings",
-      label: "Settings",
-      emoji: "⚙️",
-      description: "Open Firefox Settings",
-    },
-    {
       id: "open-quick-commands-settings",
       label: "Quick Commands Settings",
-      emoji: "🛠️",
       description: "Open Quick Commands preferences",
-    },
-    {
-      id: "open-privacy",
-      label: "Privacy Settings",
-      emoji: "🔒",
-      description: "Open Privacy & Security settings",
-    },
-    {
-      id: "open-passwords",
-      label: "Passwords",
-      emoji: "🔑",
-      description: "Open Saved Passwords",
-    },
-    {
-      id: "open-sync",
-      label: "Sync Settings",
-      emoji: "☁️",
-      description: "Open Firefox Sync settings",
-    },
-    {
-      id: "open-tasks",
-      label: "Task Manager",
-      emoji: "📊",
-      description: "Open Firefox Task Manager",
     },
     // Window
     {
       id: "new-window",
       label: "New Window",
-      emoji: "🪟",
       description: "Open a new browser window",
     },
     {
       id: "new-private",
       label: "New Private Window",
-      emoji: "🕵️",
       description: "Open a private window",
     },
     {
       id: "close-window",
       label: "Close Window",
-      emoji: "❌",
       description: "Close this window",
     },
   ];
@@ -489,7 +389,19 @@ async function executeCommand(commandId, payload, senderTab) {
       break;
     case "__open-url__":
       if (payload?.url) {
-        await browser.tabs.update(senderTab.id, { url: payload.url });
+        const targetUrl = String(payload.url);
+        const isInternalUrl =
+          /^(about:|moz-extension:|chrome:|resource:|view-source:)/i.test(
+            targetUrl,
+          );
+
+        if (isInternalUrl) {
+          await browser.tabs.create({ url: targetUrl });
+        } else if (senderTab?.id) {
+          await browser.tabs.update(senderTab.id, { url: targetUrl });
+        } else {
+          await browser.tabs.create({ url: targetUrl });
+        }
       }
       break;
     case "__restore-session__":
@@ -613,44 +525,8 @@ async function executeCommand(commandId, payload, senderTab) {
     case "view-source":
       browser.tabs.create({ url: "view-source:" + senderTab.url });
       break;
-    case "open-downloads":
-      browser.tabs.create({ url: "about:downloads" });
-      break;
-    case "open-history":
-      browser.tabs.create({ url: "about:history" });
-      break;
-    case "open-bookmarks":
-      browser.tabs.create({ url: "about:bookmarks" });
-      break;
-    case "open-extensions":
-      browser.tabs.create({ url: "about:addons" });
-      break;
-    case "open-themes":
-      browser.tabs.create({ url: "about:addons" }); // themes are in addons
-      break;
-    case "open-addons":
-      browser.tabs.create({ url: "about:addons" });
-      break;
-    case "open-console":
-      browser.tabs.create({ url: "about:debugging" });
-      break;
-    case "open-settings":
-      browser.tabs.create({ url: "about:preferences" });
-      break;
     case "open-quick-commands-settings":
       await browser.runtime.openOptionsPage();
-      break;
-    case "open-privacy":
-      browser.tabs.create({ url: "about:preferences#privacy" });
-      break;
-    case "open-passwords":
-      browser.tabs.create({ url: "about:logins" });
-      break;
-    case "open-sync":
-      browser.tabs.create({ url: "about:preferences#sync" });
-      break;
-    case "open-tasks":
-      browser.tabs.create({ url: "about:performance" });
       break;
     case "new-window":
       browser.windows.create({});

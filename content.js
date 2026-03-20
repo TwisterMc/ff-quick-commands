@@ -11,6 +11,7 @@
   let list = null;
   let selectedIndex = -1;
   let currentResults = [];
+  let displayedResults = [];
   let debounceTimer = null;
   let previousFocus = null;
   let requestToken = 0;
@@ -54,6 +55,7 @@
     input.blur();
     input.setAttribute("aria-expanded", "false");
     currentResults = [];
+    displayedResults = [];
     selectedIndex = -1;
     input.removeAttribute("aria-activedescendant");
     if (list) list.innerHTML = "";
@@ -244,14 +246,14 @@
       updateSelection(items);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (selectedIndex >= 0 && currentResults[selectedIndex]) {
-        activateResult(currentResults[selectedIndex]);
+      if (selectedIndex >= 0 && displayedResults[selectedIndex]) {
+        activateResult(displayedResults[selectedIndex]);
       }
     } else if (e.key === "Tab") {
       // Auto-complete selected item
       e.preventDefault();
-      if (selectedIndex >= 0 && currentResults[selectedIndex]) {
-        const r = currentResults[selectedIndex];
+      if (selectedIndex >= 0 && displayedResults[selectedIndex]) {
+        const r = displayedResults[selectedIndex];
         if (r.type === "tab" || r.type === "history" || r.type === "bookmark") {
           input.value = r.subtitle || "";
           fetchAndRender(input.value);
@@ -320,7 +322,8 @@
 
   function renderResults(results, query) {
     list.innerHTML = "";
-    selectedIndex = results.length > 0 ? 0 : -1;
+    selectedIndex = -1;
+    displayedResults = [];
 
     if (!results.length) {
       const empty = document.createElement("li");
@@ -331,6 +334,8 @@
       list.appendChild(empty);
       return;
     }
+
+    const bestResult = results[0];
 
     // Group by type
     const groups = groupResults(results);
@@ -345,15 +350,18 @@
       list.appendChild(groupHeader);
 
       items.forEach((result) => {
-        const globalIndex = results.indexOf(result);
-        const li = buildResultItem(result, query, globalIndex);
+        const displayIndex = displayedResults.length;
+        displayedResults.push(result);
+        const li = buildResultItem(result, query, displayIndex);
         list.appendChild(li);
       });
     }
 
-    // Select first real item
-    const firstItem = list.querySelector(".qc-item");
-    if (firstItem) firstItem.classList.add("qc-selected");
+    const bestDisplayedIndex = displayedResults.indexOf(bestResult);
+    selectedIndex = bestDisplayedIndex >= 0 ? bestDisplayedIndex : 0;
+
+    const items = list.querySelectorAll(".qc-item");
+    updateSelection(items);
   }
 
   function groupResults(results) {
@@ -388,11 +396,11 @@
     );
   }
 
-  function buildResultItem(result, query, index) {
+  function buildResultItem(result, query, displayIndex) {
     const li = document.createElement("li");
     li.className = "qc-item";
     li.setAttribute("role", "option");
-    li.id = `qc-option-${index}`;
+    li.id = `qc-option-${displayIndex}`;
     li.setAttribute("aria-selected", "false");
 
     // Icon / Favicon
@@ -434,11 +442,8 @@
     li.appendChild(badge);
 
     li.addEventListener("mouseenter", () => {
-      list
-        .querySelectorAll(".qc-item")
-        .forEach((el) => el.classList.remove("qc-selected"));
-      li.classList.add("qc-selected");
-      selectedIndex = index;
+      selectedIndex = displayIndex;
+      updateSelection(list.querySelectorAll(".qc-item"));
     });
 
     li.addEventListener("click", () => activateResult(result));
