@@ -114,11 +114,15 @@ async function ensureOverlayInjected(tabId) {
     await browser.tabs.sendMessage(tabId, { type: "PING" });
     return;
   } catch (_) {
-    // Not injected yet.
+    // Content script not loaded (shouldn't happen with manifest declaration, but fallback just in case)
   }
 
-  await browser.tabs.insertCSS(tabId, { file: "overlay.css" });
-  await browser.tabs.executeScript(tabId, { file: "content.js" });
+  try {
+    await browser.tabs.executeScript(tabId, { file: "content.js" });
+  } catch (err) {
+    // If executeScript fails, the page likely restricts injection (e.g., about: pages)
+    console.debug("Could not inject content script:", err);
+  }
 }
 
 async function openQuickCommands() {

@@ -6,6 +6,8 @@
   if (window.__quickCommandsLoaded) return;
   window.__quickCommandsLoaded = true;
 
+  let shadowHost = null;
+  let shadowRoot = null;
   let overlay = null;
   let input = null;
   let list = null;
@@ -16,6 +18,33 @@
   let previousFocus = null;
   let requestToken = 0;
   let previousScrollLockStyles = null;
+  let previousPageScrollPosition = null;
+  let shadowStylesReadyPromise = null;
+  let shadowStylesReady = false;
+
+  // ── KEYBOARD SHORTCUT LISTENER ──────────────────────────────────────────
+  // Listen for Shift+Cmd+K (Mac) or Shift+Ctrl+K (Win/Linux) in capture phase
+  // so it works even when the page has focus and captures events
+  document.addEventListener(
+    "keydown",
+    (e) => {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const isShiftK =
+        e.key === "k" && e.shiftKey && (isMac ? e.metaKey : e.ctrlKey);
+
+      if (isShiftK) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (overlay && overlay.classList.contains("qc-visible")) {
+          close();
+        } else {
+          if (!overlay) buildOverlay();
+          open();
+        }
+      }
+    },
+    true, // Use capture phase to intercept before page listeners
+  );
 
   // ── MESSAGE LISTENER ─────────────────────────────────────────────────────
   browser.runtime.onMessage.addListener((message) => {
@@ -50,14 +79,27 @@
   });
 
   // ── OPEN / CLOSE ──────────────────────────────────────────────────────────
-  function open() {
+  async function open() {
     if (!overlay) buildOverlay();
+
+    await ensureShadowStylesReady();
+
     previousFocus =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null;
     lockPageScroll();
+
+    // Ensure overlay is in the shadow DOM
+    if (!overlay.isConnected) {
+      shadowRoot.appendChild(overlay);
+    }
+
+    overlay.hidden = false;
+    overlay.style.visibility = "visible";
+    overlay.removeAttribute("inert");
     overlay.classList.add("qc-visible");
+    overlay.style.pointerEvents = "auto";
     input.value = "";
     input.setAttribute("aria-expanded", "true");
     focusSearchInput();
@@ -66,16 +108,22 @@
   }
 
   function focusSearchInput() {
-    input.focus({ preventScroll: true });
-    input.select();
-    requestAnimationFrame(() => {
+    // Small delay to ensure shadow DOM elements are interactive
+    setTimeout(() => {
       input.focus({ preventScroll: true });
-    });
+      input.select();
+      requestAnimationFrame(() => {
+        input.focus({ preventScroll: true });
+      });
+    }, 0);
   }
 
   function close() {
     if (!overlay) return;
     overlay.classList.remove("qc-visible");
+    overlay.setAttribute("inert", "");
+    overlay.hidden = true;
+    overlay.style.pointerEvents = "none";
     unlockPageScroll();
     input.blur();
     input.setAttribute("aria-expanded", "false");
@@ -89,10 +137,24 @@
       previousFocus.focus();
       previousFocus = null;
     }
+
+    // Remove overlay completely from shadow DOM so it's truly inactive
+    if (overlay.isConnected) {
+      try {
+        overlay.remove();
+      } catch (_) {
+        // Already removed or error
+      }
+    }
   }
 
   function lockPageScroll() {
     if (previousScrollLockStyles) return;
+
+    previousPageScrollPosition = {
+      x: window.scrollX,
+      y: window.scrollY,
+    };
 
     previousScrollLockStyles = {
       htmlOverflow: document.documentElement.style.overflow,
@@ -105,6 +167,9 @@
     document.documentElement.style.overscrollBehavior = "none";
     document.body.style.overflow = "hidden";
     document.body.style.overscrollBehavior = "none";
+
+    // Keep viewport anchored; some sites jump when overflow changes.
+    window.scrollTo(previousPageScrollPosition.x, previousPageScrollPosition.y);
   }
 
   function unlockPageScroll() {
@@ -119,6 +184,14 @@
       previousScrollLockStyles.bodyOverscrollBehavior;
 
     previousScrollLockStyles = null;
+
+    if (previousPageScrollPosition) {
+      window.scrollTo(
+        previousPageScrollPosition.x,
+        previousPageScrollPosition.y,
+      );
+      previousPageScrollPosition = null;
+    }
   }
 
   // ── BUILD DOM ─────────────────────────────────────────────────────────────
@@ -128,6 +201,8 @@
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", "Quick Commands");
+    overlay.style.pointerEvents = "none";
+    overlay.style.visibility = "hidden";
 
     const modal = document.createElement("div");
     modal.id = "qc-modal";
@@ -254,7 +329,11 @@
     modal.appendChild(list);
     modal.appendChild(footer);
     overlay.appendChild(modal);
-    document.body.appendChild(overlay);
+
+    ensureShadowStylesReady();
+    if (shadowRoot) {
+      shadowRoot.appendChild(overlay);
+    }
 
     // ── EVENTS ───────────────────────────────────────────────────────────
     input.addEventListener("input", () => {
@@ -286,6 +365,75 @@
     });
   }
 
+  function ensureShadowStylesReady() {
+    if (shadowStylesReadyPromise) return shadowStylesReadyPromise;
+
+    shadowStylesReadyPromise = new Promise((resolve) => {
+      if (!shadowHost) {
+        shadowHost = document.createElement("div");
+        shadowHost.id = "qc-shadow-host";
+        document.body.appendChild(shadowHost);
+      }
+
+      if (!shadowRoot) {
+        shadowRoot = shadowHost.attachShadow({ mode: "open" });
+      }
+
+      const existingLink = shadowRoot.querySelector(
+        'link[href$="overlay.css"]',
+      );
+      if (existingLink) {
+        if (shadowStylesReady) {
+          resolve();
+          return;
+        }
+
+        existingLink.addEventListener(
+          "load",
+          () => {
+            shadowStylesReady = true;
+            resolve();
+          },
+          { once: true },
+        );
+        existingLink.addEventListener(
+          "error",
+          () => {
+            // Fail open to avoid blocking the command palette entirely.
+            shadowStylesReady = true;
+            resolve();
+          },
+          { once: true },
+        );
+        return;
+      }
+
+      const styleLink = document.createElement("link");
+      styleLink.rel = "stylesheet";
+      styleLink.href = browser.runtime.getURL("overlay.css");
+      styleLink.addEventListener(
+        "load",
+        () => {
+          shadowStylesReady = true;
+          resolve();
+        },
+        { once: true },
+      );
+      styleLink.addEventListener(
+        "error",
+        () => {
+          // Fail open to avoid blocking the command palette entirely.
+          shadowStylesReady = true;
+          resolve();
+        },
+        { once: true },
+      );
+      shadowRoot.appendChild(styleLink);
+    });
+
+    return shadowStylesReadyPromise;
+  }
+
   function buildKbd(label) {
     const kbd = document.createElement("kbd");
     kbd.textContent = label;
@@ -310,11 +458,11 @@
     if (e.key === "ArrowDown") {
       e.preventDefault();
       selectedIndex = (selectedIndex + 1) % items.length;
-      updateSelection(items);
+      updateSelection(items, { scrollIntoView: true });
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       selectedIndex = (selectedIndex - 1 + items.length) % items.length;
-      updateSelection(items);
+      updateSelection(items, { scrollIntoView: true });
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (selectedIndex >= 0 && displayedResults[selectedIndex]) {
@@ -333,11 +481,15 @@
     }
   }
 
-  function updateSelection(items) {
+  function updateSelection(items, options = {}) {
+    const shouldScrollIntoView = options.scrollIntoView === true;
+
     items.forEach((el, i) => {
       el.classList.toggle("qc-selected", i === selectedIndex);
       el.setAttribute("aria-selected", i === selectedIndex ? "true" : "false");
-      if (i === selectedIndex) el.scrollIntoView({ block: "nearest" });
+      if (shouldScrollIntoView && i === selectedIndex) {
+        el.scrollIntoView({ block: "nearest" });
+      }
     });
 
     const activeItem = selectedIndex >= 0 ? items[selectedIndex] : null;
@@ -432,7 +584,7 @@
     selectedIndex = bestDisplayedIndex >= 0 ? bestDisplayedIndex : 0;
 
     const items = list.querySelectorAll(".qc-item");
-    updateSelection(items);
+    updateSelection(items, { scrollIntoView: false });
   }
 
   function groupResults(results) {
@@ -507,7 +659,9 @@
 
     li.addEventListener("mouseenter", () => {
       selectedIndex = displayIndex;
-      updateSelection(list.querySelectorAll(".qc-item"));
+      updateSelection(list.querySelectorAll(".qc-item"), {
+        scrollIntoView: false,
+      });
     });
 
     li.addEventListener("click", () => activateResult(result));

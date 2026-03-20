@@ -25,6 +25,14 @@
     "scripts": ["background.js"],
     "persistent": false
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
   "commands": {
     "open-quick-commands": {
       "suggested_key": {
@@ -40,6 +48,7 @@
     },
     "default_title": "Quick Commands"
   },
+  "web_accessible_resources": ["overlay.css"],
   "options_ui": {
     "page": "options.html",
     "browser_style": true,
