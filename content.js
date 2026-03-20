@@ -30,6 +30,12 @@
       }
     }
 
+    if (message.type === "CLOSE_QUICK_COMMANDS") {
+      if (overlay && overlay.classList.contains("qc-visible")) {
+        close();
+      }
+    }
+
     if (message.type === "TOGGLE_QUICK_COMMANDS") {
       if (overlay && overlay.classList.contains("qc-visible")) {
         close();

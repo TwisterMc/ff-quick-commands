@@ -19,6 +19,8 @@ const DEFAULT_SEARCH_SETTINGS = {
   searchHistory: true,
 };
 
+const activeTabByWindowId = new Map();
+
 async function getSearchSettings() {
   try {
     const stored = await browser.storage.local.get(DEFAULT_SEARCH_SETTINGS);
@@ -72,6 +74,33 @@ async function openQuickCommands() {
     console.error("Unable to open Quick Commands overlay:", err);
   }
 }
+
+async function closeQuickCommandsInTab(tabId) {
+  if (!tabId || tabId < 0) return;
+
+  try {
+    await browser.tabs.sendMessage(tabId, {
+      type: "CLOSE_QUICK_COMMANDS",
+    });
+  } catch (_) {
+    // Tab does not have the content script injected; nothing to close.
+  }
+}
+
+browser.tabs.onActivated.addListener(async ({ tabId, windowId }) => {
+  const previousTabId = activeTabByWindowId.get(windowId);
+  activeTabByWindowId.set(windowId, tabId);
+
+  if (previousTabId && previousTabId !== tabId) {
+    await closeQuickCommandsInTab(previousTabId);
+  }
+});
+
+browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  if (activeTabByWindowId.get(removeInfo.windowId) === tabId) {
+    activeTabByWindowId.delete(removeInfo.windowId);
+  }
+});
 
 // Listen for data requests from content script
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
