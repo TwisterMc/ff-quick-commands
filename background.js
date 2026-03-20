@@ -145,16 +145,20 @@ async function fetchData(query, filter) {
     if (settings.searchBookmarks && (!filter || filter === "bookmark")) {
       if (q) {
         const bookmarks = await browser.bookmarks.search(q);
-        for (const bm of bookmarks.slice(0, 15)) {
-          if (!bm.url) continue;
-          results.push({
+        const bookmarkResults = bookmarks
+          .filter((bm) => Boolean(bm.url))
+          .map((bm) => ({
             type: "bookmark",
             title: bm.title || bm.url,
             subtitle: bm.url,
             url: bm.url,
             icon: null,
-          });
-        }
+          }));
+
+        bookmarkResults.sort(
+          (a, b) => getMatchScore(b, q) - getMatchScore(a, q),
+        );
+        results.push(...bookmarkResults.slice(0, 15));
       }
     }
 
