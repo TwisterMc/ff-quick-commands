@@ -20,6 +20,49 @@ const DEFAULT_SEARCH_SETTINGS = {
 };
 
 const activeTabByWindowId = new Map();
+const fetchDataCache = new Map();
+const FETCH_DATA_CACHE_TTL_MS = 1000;
+const VEMETRIC_FAVICON_API_BASE_URL = "https://favicon.vemetric.com";
+
+function clearFetchDataCache() {
+  fetchDataCache.clear();
+}
+
+function getFetchDataCacheKey(query, filter, settings) {
+  return JSON.stringify({
+    query: String(query || "")
+      .trim()
+      .toLowerCase(),
+    filter: filter || null,
+    settings,
+  });
+}
+
+function cloneResult(result) {
+  return {
+    ...result,
+    icon: Array.isArray(result.icon) ? [...result.icon] : result.icon,
+  };
+}
+
+function getCachedFetchData(cacheKey) {
+  const cachedEntry = fetchDataCache.get(cacheKey);
+  if (!cachedEntry) return null;
+
+  if (Date.now() - cachedEntry.timestamp > FETCH_DATA_CACHE_TTL_MS) {
+    fetchDataCache.delete(cacheKey);
+    return null;
+  }
+
+  return cachedEntry.results.map(cloneResult);
+}
+
+function setCachedFetchData(cacheKey, results) {
+  fetchDataCache.set(cacheKey, {
+    timestamp: Date.now(),
+    results: results.map(cloneResult),
+  });
+}
 
 async function getSearchSettings() {
   try {
@@ -37,6 +80,33 @@ function isRestrictedUrl(url) {
     url.startsWith("chrome:") ||
     url.startsWith("resource:")
   );
+}
+
+function getResultIconCandidates(url, preferredIconUrl = null) {
+  if (!url) return null;
+
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return null;
+    }
+
+    const candidates = [];
+
+    if (preferredIconUrl) {
+      candidates.push(preferredIconUrl);
+    }
+
+    candidates.push(
+      `${VEMETRIC_FAVICON_API_BASE_URL}/${encodeURIComponent(parsedUrl.hostname)}?size=32&format=png`,
+      `${parsedUrl.origin}/favicon.ico`,
+      `${parsedUrl.origin}/favicon.svg`,
+    );
+
+    return [...new Set(candidates.filter(Boolean))];
+  } catch (_) {
+    return null;
+  }
 }
 
 async function ensureOverlayInjected(tabId) {
@@ -88,6 +158,7 @@ async function closeQuickCommandsInTab(tabId) {
 }
 
 browser.tabs.onActivated.addListener(async ({ tabId, windowId }) => {
+  clearFetchDataCache();
   const previousTabId = activeTabByWindowId.get(windowId);
   activeTabByWindowId.set(windowId, tabId);
 
@@ -97,8 +168,67 @@ browser.tabs.onActivated.addListener(async ({ tabId, windowId }) => {
 });
 
 browser.tabs.onRemoved.addListener((tabId, removeInfo) => {
+  clearFetchDataCache();
   if (activeTabByWindowId.get(removeInfo.windowId) === tabId) {
     activeTabByWindowId.delete(removeInfo.windowId);
+  }
+});
+
+browser.tabs.onCreated.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.tabs.onUpdated.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.tabs.onMoved.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.tabs.onAttached.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.tabs.onDetached.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.bookmarks.onCreated.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.bookmarks.onRemoved.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.bookmarks.onChanged.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.bookmarks.onMoved.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.history.onVisited.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.history.onVisitRemoved.addListener(() => {
+  clearFetchDataCache();
+});
+
+browser.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local") return;
+
+  if (
+    changes.searchTabs ||
+    changes.searchClosedTabs ||
+    changes.searchBookmarks ||
+    changes.searchCommands ||
+    changes.searchHistory
+  ) {
+    clearFetchDataCache();
   }
 });
 
@@ -124,6 +254,12 @@ async function fetchData(query, filter) {
   const results = [];
   const q = query.trim().toLowerCase();
   const settings = await getSearchSettings();
+  const cacheKey = getFetchDataCacheKey(q, filter, settings);
+  const cachedResults = getCachedFetchData(cacheKey);
+
+  if (cachedResults) {
+    return cachedResults;
+  }
 
   try {
     // ── TABS ──────────────────────────────────────────────────────────────
@@ -138,7 +274,7 @@ async function fetchData(query, filter) {
             id: tab.id,
             title: tab.title || tab.url,
             subtitle: tab.url,
-            icon: tab.favIconUrl || null,
+            icon: getResultIconCandidates(tab.url, tab.favIconUrl),
             windowId: tab.windowId,
           });
         }
@@ -162,7 +298,7 @@ async function fetchData(query, filter) {
               sessionId: session.tab.sessionId,
               title: t.title || t.url,
               subtitle: t.url,
-              icon: t.favIconUrl || null,
+              icon: getResultIconCandidates(t.url, t.favIconUrl),
             });
           }
         }
@@ -180,7 +316,7 @@ async function fetchData(query, filter) {
             title: bm.title || bm.url,
             subtitle: bm.url,
             url: bm.url,
-            icon: null,
+            icon: getResultIconCandidates(bm.url),
           }));
 
         bookmarkResults.sort(
@@ -204,7 +340,7 @@ async function fetchData(query, filter) {
             title: item.title || item.url,
             subtitle: item.url,
             url: item.url,
-            icon: null,
+            icon: getResultIconCandidates(item.url),
           });
         }
       }
@@ -249,6 +385,8 @@ async function fetchData(query, filter) {
       delete result._sortIndex;
     });
   }
+
+  setCachedFetchData(cacheKey, results);
 
   return results;
 }

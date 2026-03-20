@@ -478,14 +478,7 @@
     const iconEl = document.createElement("span");
     iconEl.className = "qc-item-icon";
     if (result.icon) {
-      const img = document.createElement("img");
-      img.src = result.icon;
-      img.width = 16;
-      img.height = 16;
-      img.onerror = () => {
-        iconEl.replaceChildren(createIconSvg(iconNameForType(result.type)));
-      };
-      iconEl.appendChild(img);
+      loadResultIcon(iconEl, result);
     } else {
       iconEl.appendChild(createIconSvg(iconNameForType(result.type)));
     }
@@ -520,6 +513,34 @@
     li.addEventListener("click", () => activateResult(result));
 
     return li;
+  }
+
+  function loadResultIcon(iconEl, result) {
+    const iconCandidates = Array.isArray(result.icon)
+      ? result.icon.filter(Boolean)
+      : [result.icon].filter(Boolean);
+
+    if (!iconCandidates.length) {
+      iconEl.appendChild(createIconSvg(iconNameForType(result.type)));
+      return;
+    }
+
+    const img = document.createElement("img");
+    img.width = 16;
+    img.height = 16;
+
+    let candidateIndex = 0;
+    img.onerror = () => {
+      candidateIndex += 1;
+      if (candidateIndex < iconCandidates.length) {
+        img.src = iconCandidates[candidateIndex];
+        return;
+      }
+      iconEl.replaceChildren(createIconSvg(iconNameForType(result.type)));
+    };
+
+    img.src = iconCandidates[candidateIndex];
+    iconEl.appendChild(img);
   }
 
   function iconNameForType(type) {
