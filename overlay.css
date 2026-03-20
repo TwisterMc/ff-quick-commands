@@ -2,6 +2,22 @@
 
 #qc-overlay {
   all: initial;
+  --qc-color-surface: #1e1e2e;
+  --qc-color-text-primary: #cdd6f4;
+  --qc-color-text-secondary: rgba(205, 214, 244, 0.78);
+  --qc-color-text-muted: rgba(205, 214, 244, 0.72);
+  --qc-color-text-subtle: rgba(205, 214, 244, 0.62);
+  --qc-color-border-soft: rgba(255, 255, 255, 0.12);
+  --qc-color-border-subtle: rgba(255, 255, 255, 0.07);
+  --qc-color-fill-soft: rgba(255, 255, 255, 0.08);
+  --qc-color-fill-strong: rgba(255, 255, 255, 0.12);
+  --qc-color-accent: #89b4fa;
+  --qc-color-accent-text: #dce9ff;
+  --qc-color-accent-fill: rgba(137, 180, 250, 0.24);
+  --qc-color-accent-fill-hover: rgba(137, 180, 250, 0.18);
+  --qc-color-accent-border: rgba(137, 180, 250, 0.48);
+  --qc-color-highlight-bg: #f9e2af;
+  --qc-color-highlight-text: #3d2f12;
   position: fixed;
   inset: 0;
   z-index: 2147483647;
@@ -28,7 +44,7 @@
   all: initial;
   width: 640px;
   max-width: 92vw;
-  background: #1e1e2e;
+  background: var(--qc-color-surface);
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow:
@@ -78,25 +94,25 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 16px;
   font-weight: 400;
-  color: #cdd6f4;
+  color: var(--qc-color-text-primary);
   background: transparent;
   border: none;
-  caret-color: #89b4fa;
+  caret-color: var(--qc-color-accent);
 }
 
 #qc-input:focus-visible {
-  outline: 2px solid #89b4fa;
+  outline: 2px solid var(--qc-color-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 #qc-input::placeholder {
-  color: rgba(205, 214, 244, 0.35);
+  color: var(--qc-color-text-muted);
 }
 
 #qc-hint {
   font-size: 11px;
-  color: rgba(205, 214, 244, 0.3);
+  color: var(--qc-color-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
   line-height: 1.4;
@@ -107,9 +123,9 @@
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(205, 214, 244, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--qc-color-fill-strong);
+  color: var(--qc-color-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 4px;
   padding: 1px 5px;
 }
@@ -130,9 +146,9 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 11.5px;
   font-weight: 500;
-  color: rgba(205, 214, 244, 0.5);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--qc-color-text-secondary);
+  background: var(--qc-color-fill-soft);
+  border: 1px solid var(--qc-color-border-soft);
   border-radius: 20px;
   padding: 3px 11px;
   cursor: pointer;
@@ -143,19 +159,19 @@
 }
 
 .qc-chip:hover {
-  background: rgba(255, 255, 255, 0.09);
-  color: rgba(205, 214, 244, 0.75);
+  background: var(--qc-color-fill-strong);
+  color: #eef3ff;
 }
 
 .qc-chip:focus-visible {
-  outline: 2px solid #89b4fa;
+  outline: 2px solid var(--qc-color-accent);
   outline-offset: 2px;
 }
 
 .qc-chip-active {
-  background: rgba(137, 180, 250, 0.18) !important;
-  color: #89b4fa !important;
-  border-color: rgba(137, 180, 250, 0.35) !important;
+  background: var(--qc-color-accent-fill) !important;
+  color: var(--qc-color-accent-text) !important;
+  border-color: var(--qc-color-accent-border) !important;
 }
 
 .qc-chip-settings {
@@ -205,7 +221,7 @@
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(205, 214, 244, 0.3);
+  color: var(--qc-color-text-subtle);
   padding: 10px 16px 4px;
 }
 
@@ -225,11 +241,11 @@
 
 .qc-item.qc-selected,
 .qc-item:hover {
-  background: rgba(137, 180, 250, 0.12);
+  background: var(--qc-color-accent-fill-hover);
 }
 
 .qc-item:focus-visible {
-  outline: 2px solid #89b4fa;
+  outline: 2px solid var(--qc-color-accent);
   outline-offset: 1px;
 }
 
@@ -272,7 +288,7 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 13.5px;
   font-weight: 500;
-  color: #cdd6f4;
+  color: var(--qc-color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -281,13 +297,14 @@
 
 .qc-item-title mark {
   all: initial;
-  background: rgba(250, 219, 109, 0.3);
-  color: #f9e2af;
+  background: var(--qc-color-highlight-bg);
+  color: var(--qc-color-highlight-text);
   border-radius: 2px;
   font-weight: 700;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 13.5px;
+  padding: 0 1px;
 }
 
 .qc-item-subtitle {
@@ -295,7 +312,7 @@
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 11.5px;
-  color: rgba(205, 214, 244, 0.55);
+  color: var(--qc-color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -308,9 +325,9 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 10px;
   font-weight: 500;
-  color: rgba(205, 214, 244, 0.3);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: var(--qc-color-text-secondary);
+  background: var(--qc-color-fill-soft);
+  border: 1px solid var(--qc-color-border-soft);
   border-radius: 4px;
   padding: 2px 6px;
   flex-shrink: 0;
@@ -323,7 +340,7 @@
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   font-size: 13px;
-  color: rgba(205, 214, 244, 0.35);
+  color: var(--qc-color-text-muted);
   text-align: center;
   padding: 28px 16px;
   font-style: italic;
