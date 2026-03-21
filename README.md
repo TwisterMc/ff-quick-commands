@@ -15,6 +15,7 @@ A Vivaldi-inspired Quick Commands palette for Firefox. Press **Shift+Cmd+K** (Ma
 | **Bookmarks**   | Search and open any bookmark                                       |
 | **History**     | Full-text search your browsing history                             |
 | **Commands**    | Browser commands for tabs, navigation, zoom, settings, and windows |
+| **Search**      | Search with your default search engine                             |
 
 ### Settings
 
@@ -26,7 +27,9 @@ Open extension preferences to choose which sources are searched:
 - Commands
 - History
 
-In Firefox: `about:addons` -> **Quick Commands** -> **Preferences**
+### Keyboard Shortcut
+
+The default shortcut is **Shift+Cmd+K** (Mac) or **Shift+Ctrl+K** (Windows/Linux). You can change it in the extension settings.
 
 ### Keyboard shortcuts in the palette
 

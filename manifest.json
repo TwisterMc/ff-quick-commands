@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Quick Commands",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Vivaldi-style Quick Commands palette for Firefox. Press Shift+Cmd+K (Mac) or Shift+Ctrl+K (Win/Linux) to open.",
   "browser_specific_settings": {
     "gecko": {
