@@ -876,13 +876,18 @@
   }
 
   function highlightDom(element, text, query) {
-    // Safely populate element with highlighted text using DOM APIs
-    // The HTML from highlight() is already properly escaped
+    // Safely populate element with highlighted text using DOM APIs only
     const html = highlight(text, query);
-    const tmp = document.createElement("div");
-    tmp.innerHTML = html;
-    while (tmp.firstChild) {
-      element.appendChild(tmp.firstChild);
+    // Parse the escapeHtml-safe HTML with <mark> tags by splitting and reconstructing
+    const parts = html.split(/(<mark>.*?<\/mark>)/);
+    for (const part of parts) {
+      if (part.startsWith("<mark>") && part.endsWith("</mark>")) {
+        const mark = document.createElement("mark");
+        mark.textContent = part.slice(6, -7); // Extract text between <mark> tags
+        element.appendChild(mark);
+      } else if (part) {
+        element.appendChild(document.createTextNode(part));
+      }
     }
   }
 
