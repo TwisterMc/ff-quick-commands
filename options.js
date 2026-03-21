@@ -29,6 +29,25 @@ async function loadSettings() {
   }
 }
 
+async function loadCurrentShortcut() {
+  try {
+    const commands = await browser.commands.getAll();
+    const openCommand = commands.find(cmd => cmd.name === "open-quick-commands");
+    const shortcutEl = document.getElementById("currentShortcut");
+    if (shortcutEl) {
+      if (openCommand && openCommand.shortcut) {
+        shortcutEl.textContent = openCommand.shortcut;
+      } else {
+        shortcutEl.textContent = "Not set";
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load shortcuts:", err);
+    const shortcutEl = document.getElementById("currentShortcut");
+    if (shortcutEl) shortcutEl.textContent = "Unable to load";
+  }
+}
+
 async function saveSettings() {
   const payload = {};
   for (const key of SETTING_KEYS) {
@@ -51,9 +70,20 @@ function bindEvents() {
       });
     }
   }
+
+  const customizeBtn = document.getElementById("customizeShortcutBtn");
+  if (customizeBtn) {
+    customizeBtn.addEventListener("click", () => {
+      if (browser.commands.openShortcutSettings) {
+        browser.commands.openShortcutSettings().catch((err) => {
+          console.error("Failed to open shortcut settings:", err);
+        });
+      }
+    });
+  }
 }
 
-loadSettings()
+Promise.all([loadSettings(), loadCurrentShortcut()])
   .then(bindEvents)
   .catch((err) => {
     console.error("Failed to load settings:", err);

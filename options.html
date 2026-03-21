@@ -99,6 +99,19 @@
       </p>
     </fieldset>
 
+    <fieldset>
+      <legend>Keyboard Shortcut</legend>
+
+      <div class="setting-row">
+        <span>Current shortcut:</span>
+        <code id="currentShortcut" style="font-family: monospace; padding: 4px 8px; background: color-mix(in srgb, currentColor 10%, transparent); border-radius: 4px;">Loading...</code>
+      </div>
+
+      <button id="customizeShortcutBtn" style="margin-top: 12px; padding: 8px 16px; border: 1px solid currentColor; border-radius: 6px; background: transparent; cursor: pointer; font-size: 14px;">
+        Customize Shortcut…
+      </button>
+    </fieldset>
+
     <div id="status" role="status" aria-live="polite"></div>
 
     <script src="options.js"></script>
