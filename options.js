@@ -32,7 +32,9 @@ async function loadSettings() {
 async function loadCurrentShortcut() {
   try {
     const commands = await browser.commands.getAll();
-    const openCommand = commands.find(cmd => cmd.name === "open-quick-commands");
+    const openCommand = commands.find(
+      (cmd) => cmd.name === "open-quick-commands",
+    );
     const shortcutEl = document.getElementById("currentShortcut");
     if (shortcutEl) {
       if (openCommand && openCommand.shortcut) {

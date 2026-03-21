@@ -22,6 +22,7 @@
     "history",
     "sessions",
     "storage",
+    "search",
     "<all_urls>"
   ],
   "background": {

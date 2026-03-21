@@ -528,7 +528,7 @@
 
     currentResults = results || [];
     selectedIndex = currentResults.length > 0 ? 0 : -1;
-    renderResults(currentResults, query);
+    await renderResults(currentResults, query);
   }
 
   function parseQuery(raw) {
@@ -551,46 +551,90 @@
     return { query: raw.trim(), filter: null };
   }
 
-  function renderResults(results, query) {
+  async function renderResults(results, query) {
     list.innerHTML = "";
     selectedIndex = -1;
     displayedResults = [];
 
-    if (!results.length) {
-      const empty = document.createElement("li");
-      empty.className = "qc-empty";
-      empty.textContent = query
-        ? "No results found"
-        : "Start typing to search...";
-      list.appendChild(empty);
-      return;
-    }
+    // Render actual results
+    if (results.length) {
+      const bestResult = results[0];
 
-    const bestResult = results[0];
+      // Group by type
+      const groups = groupResults(results);
+      for (const [groupLabel, items] of groups) {
+        if (!items.length) {
+          continue;
+        }
 
-    // Group by type
-    const groups = groupResults(results);
-    for (const [groupLabel, items] of groups) {
-      if (!items.length) {
-        continue;
+        const groupHeader = document.createElement("li");
+        groupHeader.className = "qc-group-header";
+        groupHeader.setAttribute("role", "presentation");
+        groupHeader.textContent = groupLabel;
+        list.appendChild(groupHeader);
+
+        items.forEach((result) => {
+          const displayIndex = displayedResults.length;
+          displayedResults.push(result);
+          const li = buildResultItem(result, query, displayIndex);
+          list.appendChild(li);
+        });
       }
 
-      const groupHeader = document.createElement("li");
-      groupHeader.className = "qc-group-header";
-      groupHeader.setAttribute("role", "presentation");
-      groupHeader.textContent = groupLabel;
-      list.appendChild(groupHeader);
-
-      items.forEach((result) => {
-        const displayIndex = displayedResults.length;
-        displayedResults.push(result);
-        const li = buildResultItem(result, query, displayIndex);
-        list.appendChild(li);
-      });
+      const bestDisplayedIndex = displayedResults.indexOf(bestResult);
+      selectedIndex = bestDisplayedIndex >= 0 ? bestDisplayedIndex : 0;
+    } else {
+      // No actual results
+      if (query) {
+        const empty = document.createElement("li");
+        empty.className = "qc-empty";
+        empty.textContent = "No results found";
+        list.appendChild(empty);
+      } else {
+        const empty = document.createElement("li");
+        empty.className = "qc-empty";
+        empty.textContent = "Start typing to search...";
+        list.appendChild(empty);
+      }
     }
 
-    const bestDisplayedIndex = displayedResults.indexOf(bestResult);
-    selectedIndex = bestDisplayedIndex >= 0 ? bestDisplayedIndex : 0;
+    // Always add search as the last option if there's a query
+    if (query) {
+      let engineName = "Search";
+      try {
+        const response = await browser.runtime.sendMessage({
+          type: "GET_DEFAULT_SEARCH_ENGINE",
+        });
+        if (response && response.name) {
+          engineName = response.name;
+        }
+      } catch (error) {
+        console.error("Failed to get search engine name:", error);
+      }
+
+      // Add a group header for search section
+      const searchHeader = document.createElement("li");
+      searchHeader.className = "qc-group-header";
+      searchHeader.setAttribute("role", "presentation");
+      searchHeader.textContent = "Search";
+      list.appendChild(searchHeader);
+
+      const searchResult = {
+        type: "search",
+        title: `Search ${engineName} for "${query}"`,
+        subtitle: "",
+        query: query,
+      };
+      const displayIndex = displayedResults.length;
+      displayedResults.push(searchResult);
+      const li = buildResultItem(searchResult, query, displayIndex);
+      list.appendChild(li);
+
+      // If no actual results, select the search option
+      if (!results.length) {
+        selectedIndex = displayIndex;
+      }
+    }
 
     const items = list.querySelectorAll(".qc-item");
     updateSelection(items, { scrollIntoView: false });
@@ -758,6 +802,7 @@
         bookmark: "bookmark",
         history: "history",
         command: "command",
+        search: "search",
       }[type] || "dot"
     );
   }
@@ -861,6 +906,7 @@
         bookmark: "Bookmark",
         history: "History",
         command: "Command",
+        search: "Search",
       }[type] || ""
     );
   }
@@ -883,12 +929,20 @@
     for (const part of parts) {
       if (part.startsWith("<mark>") && part.endsWith("</mark>")) {
         const mark = document.createElement("mark");
-        mark.textContent = part.slice(6, -7); // Extract text between <mark> tags
+        mark.textContent = unescapeHtml(part.slice(6, -7)); // Extract text between <mark> tags and decode
         element.appendChild(mark);
       } else if (part) {
-        element.appendChild(document.createTextNode(part));
+        element.appendChild(document.createTextNode(unescapeHtml(part)));
       }
     }
+  }
+
+  function unescapeHtml(str) {
+    return String(str)
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&");
   }
 
   function escapeHtml(str) {
@@ -930,6 +984,12 @@
         type: "EXECUTE_COMMAND",
         command: result.commandId,
         payload: {},
+      });
+    } else if (result.type === "search") {
+      await browser.runtime.sendMessage({
+        type: "EXECUTE_COMMAND",
+        command: "__search__",
+        payload: { query: result.query },
       });
     }
   }

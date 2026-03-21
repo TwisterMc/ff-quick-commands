@@ -298,6 +298,11 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true;
   }
+
+  if (message.type === "GET_DEFAULT_SEARCH_ENGINE") {
+    getDefaultSearchEngineName().then(sendResponse);
+    return true; // keep channel open for async
+  }
 });
 
 async function fetchData(query, filter) {
@@ -802,7 +807,31 @@ async function executeCommand(commandId, payload, senderTab) {
     case "close-window":
       if (senderTab) browser.windows.remove(senderTab.windowId);
       break;
+    case "__search__":
+      if (payload?.query) {
+        browser.search.search({
+          query: payload.query,
+          engine: null, // Use default search engine
+        });
+      }
+      break;
     default:
       break;
   }
+}
+
+async function getDefaultSearchEngineName() {
+  try {
+    const engines = await browser.search.get();
+
+    // Specifically look for the 'isDefault' flag
+    const defaultEngine = engines.find((engine) => engine.isDefault === true);
+
+    if (defaultEngine) {
+      return { name: defaultEngine.name };
+    }
+  } catch (error) {
+    console.error("Failed to get search engine name:", error);
+  }
+  return { name: "Search" };
 }
