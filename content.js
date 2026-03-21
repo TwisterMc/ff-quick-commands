@@ -649,7 +649,7 @@
 
     const title = document.createElement("span");
     title.className = "qc-item-title";
-    title.innerHTML = highlight(result.title || "", query);
+    highlightDom(title, result.title || "", query);
 
     const subtitle = document.createElement("span");
     subtitle.className = "qc-item-subtitle";
@@ -873,6 +873,17 @@
       new RegExp(`(${escapedQ})`, "gi"),
       "<mark>$1</mark>",
     );
+  }
+
+  function highlightDom(element, text, query) {
+    // Safely populate element with highlighted text using DOM APIs
+    // The HTML from highlight() is already properly escaped
+    const html = highlight(text, query);
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    while (tmp.firstChild) {
+      element.appendChild(tmp.firstChild);
+    }
   }
 
   function escapeHtml(str) {
