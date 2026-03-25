@@ -45,7 +45,7 @@ The default shortcut is **Shift+Cmd+K** (Mac) or **Shift+Ctrl+K** (Windows/Linux
 
 ## Installation
 
-Coming soon to Mozilla Add-ons!
+Install via [Mozilla Add-ons](https://addons.mozilla.org/en-US/firefox/addon/ff-quick-commands/).
 
 ## Notes About Favicons
 
